@@ -72,13 +72,20 @@ router.beforeEach((to, from, next) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
   const { hasPermission } = usePermission()
   
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/login')
-  } else if (to.meta.permission && !hasPermission(to.meta.permission as string)) {
-    next('/home')  // 如果没有权限，跳转到首页
-  } else if (to.path === '/login' && isAuthenticated) {
+  // 如果访问登录页且已登录，跳转到首页
+  if (to.path === '/login' && isAuthenticated) {
     next('/home')
-  } else {
+  }
+  // 如果需要认证但未登录，跳转到登录页
+  else if (to.meta.requiresAuth && !isAuthenticated) {
+    next('/login')
+  }
+  // 如果需要特定权限但没有权限，跳转到首页
+  else if (to.meta.permission && !hasPermission(to.meta.permission as string)) {
+    next('/home')
+  }
+  // 其他情况正常访问
+  else {
     next()
   }
 })

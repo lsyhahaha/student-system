@@ -2,7 +2,7 @@
   <el-container class="app-container">
     <el-aside width="200px" class="aside">
       <div class="logo">
-        <img src="/logo.png" alt="Logo" class="logo-img" />
+        <el-icon :size="32" class="logo-icon"><School /></el-icon>
         <span class="logo-text">学生管理系统</span>
       </div>
       <el-menu
@@ -54,8 +54,9 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { User } from '@element-plus/icons-vue'
+import { User, School } from '@element-plus/icons-vue'
 import { usePermission } from './hooks/usePermission'
+import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
@@ -83,7 +84,11 @@ const handleCommand = (command: string) => {
       // TODO: 实现修改密码功能
       break
     case 'logout':
-      // TODO: 实现登出功能
+      // 清除登录状态
+      localStorage.removeItem('isAuthenticated')
+      localStorage.removeItem('userRole')
+      localStorage.removeItem('userName')
+      ElMessage.success('已退出登录')
       router.push('/login')
       break
   }
@@ -108,9 +113,7 @@ const handleCommand = (command: string) => {
   background-color: #2b3648;
 }
 
-.logo-img {
-  width: 32px;
-  height: 32px;
+.logo-icon {
   margin-right: 8px;
 }
 
