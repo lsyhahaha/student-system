@@ -45,32 +45,37 @@
       </div>
 
       <!-- 批量操作区域 -->
-      <div class="mb-4 flex items-center gap-2">
+      <div class="mb-4 flex items-center justify-start space-x-4">
+        <el-button type="info">
+          <el-icon class="mr-1"><Download /></el-icon>下载模板
+        </el-button>
         <el-upload
-          class="mr-2"
           action="#"
           :auto-upload="false"
           :show-file-list="false"
           accept=".xlsx,.xls"
           @change="handleImport"
+          class="inline-flex"
         >
           <el-button type="primary">
-            <el-icon><Upload /></el-icon>批量导入
+            <el-icon class="mr-1"><Upload /></el-icon>批量导入
           </el-button>
         </el-upload>
         <el-button
           type="danger"
+          plain
           :disabled="!selectedStudents.length"
           @click="handleBatchDelete"
         >
-          <el-icon><Delete /></el-icon>批量删除
+          <el-icon class="mr-1"><Delete /></el-icon>批量删除
         </el-button>
         <el-button
           type="success"
+          plain
           :disabled="!selectedStudents.length"
           @click="handleBatchExport"
         >
-          <el-icon><Download /></el-icon>批量导出
+          <el-icon class="mr-1"><Download /></el-icon>批量导出
         </el-button>
       </div>
 
@@ -352,11 +357,81 @@ const handleImport = (file: any) => {
   reader.readAsArrayBuffer(file.raw)
 }
 
+// 下载导入模板
+const handleDownloadTemplate = () => {
+  try {
+    // 创建模板数据
+    const templateData = [{
+      '学号': '2024001',
+      '姓名': '张三',
+      '性别': '男',
+      '年龄': 18,
+      '班级': '计算机科学1班',
+      '邮箱': 'zhangsan@example.com',
+      '状态': '在读',
+      '入学时间': '2024-09-01',
+      '备注': '示例数据'
+    }]
+
+    // 创建工作簿
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(templateData)
+
+    // 设置列宽
+    const colWidths = [
+      { wch: 10 }, // 学号
+      { wch: 10 }, // 姓名
+      { wch: 8 },  // 性别
+      { wch: 8 },  // 年龄
+      { wch: 15 }, // 班级
+      { wch: 25 }, // 邮箱
+      { wch: 8 },  // 状态
+      { wch: 12 }, // 入学时间
+      { wch: 20 }  // 备注
+    ]
+    ws['!cols'] = colWidths
+
+    // 添加说明sheet
+    const instructions = [
+      ['字段说明：'],
+      ['学号：7位数字，如2024001'],
+      ['姓名：2-20个字符'],
+      ['性别：男/女'],
+      ['年龄：18-100之间的数字'],
+      ['班级：计算机科学1班/计算机科学2班/软件工程1班/软件工程2班'],
+      ['邮箱：有效的邮箱地址'],
+      ['状态：在读/休学'],
+      ['入学时间：YYYY-MM-DD格式'],
+      ['备注：可选，最多200个字符'],
+      [''],
+      ['注意事项：'],
+      ['1. 所有带*的字段为必填项'],
+      ['2. 请勿修改表头'],
+      ['3. 请按照示例格式填写数据'],
+      ['4. 性别只能填写"男"或"女"'],
+      ['5. 状态只能填写"在读"或"休学"']
+    ]
+    const wsInstructions = XLSX.utils.aoa_to_sheet(instructions)
+    wsInstructions['!cols'] = [{ wch: 50 }]
+
+    // 添加sheet
+    XLSX.utils.book_append_sheet(wb, ws, '学生信息')
+    XLSX.utils.book_append_sheet(wb, wsInstructions, '使用说明')
+
+    // 导出文件
+    XLSX.writeFile(wb, '学生信息导入模板.xlsx')
+    ElMessage.success('模板下载成功')
+  } catch (error) {
+    console.error('模板下载失败:', error)
+    ElMessage.error('模板下载失败')
+  }
+}
+
 // 批量导出
 const handleBatchExport = () => {
   try {
     // 准备导出数据
-    const exportData = selectedStudents.value.map(student => ({
+    const exportData = selectedStudents.value.map((student: any) => ({
       '学号': student.id,
       '姓名': student.name,
       '性别': student.gender === 'male' ? '男' : '女',
@@ -371,11 +446,28 @@ const handleBatchExport = () => {
     // 创建工作簿
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.json_to_sheet(exportData)
+
+    // 设置列宽
+    const colWidths = [
+      { wch: 10 }, // 学号
+      { wch: 10 }, // 姓名
+      { wch: 8 },  // 性别
+      { wch: 8 },  // 年龄
+      { wch: 15 }, // 班级
+      { wch: 25 }, // 邮箱
+      { wch: 8 },  // 状态
+      { wch: 12 }, // 入学时间
+      { wch: 20 }  // 备注
+    ]
+    ws['!cols'] = colWidths
+
+    // 添加sheet
     XLSX.utils.book_append_sheet(wb, ws, '学生信息')
 
     // 导出文件
-    XLSX.writeFile(wb, `学生信息_${new Date().toLocaleDateString()}.xlsx`)
-    ElMessage.success('导出成功')
+    const fileName = `学生信息_${new Date().toLocaleDateString()}_${selectedStudents.value.length}条.xlsx`
+    XLSX.writeFile(wb, fileName)
+    ElMessage.success(`成功导出 ${selectedStudents.value.length} 条数据`)
   } catch (error) {
     console.error('导出失败:', error)
     ElMessage.error('导出失败')

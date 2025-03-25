@@ -1,109 +1,173 @@
 <template>
-  <el-container class="layout-container">
-    <el-header v-if="isAuthenticated">
+  <el-container class="app-container">
+    <el-aside width="200px" class="aside">
+      <div class="logo">
+        <img src="/logo.png" alt="Logo" class="logo-img" />
+        <span class="logo-text">学生管理系统</span>
+      </div>
       <el-menu
+        :default-active="route.path"
+        class="el-menu-vertical"
         :router="true"
-        mode="horizontal"
-        :ellipsis="false"
       >
-        <el-menu-item index="/">
-          <el-icon><House /></el-icon>
-          首页
+        <el-menu-item
+          v-for="menu in userMenus"
+          :key="menu.path"
+          :index="menu.path"
+        >
+          <el-icon><component :is="menu.icon" /></el-icon>
+          <span>{{ menu.name }}</span>
         </el-menu-item>
-        <el-menu-item index="/students">
-          <el-icon><User /></el-icon>
-          学生管理
-        </el-menu-item>
-        
-        <div class="flex-grow" />
-        
-        <el-dropdown @command="handleCommand">
-          <span class="el-dropdown-link">
-            <el-icon><UserFilled /></el-icon>
-            管理员
-            <el-icon class="el-icon--right"><arrow-down /></el-icon>
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="logout">退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
       </el-menu>
-    </el-header>
-    
-    <el-main>
-      <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
-    </el-main>
-    
-    <el-footer v-if="isAuthenticated">
-      <p class="text-center text-gray-500">© 2024 学生管理系统</p>
-    </el-footer>
+    </el-aside>
+
+    <el-container>
+      <el-header class="header">
+        <div class="header-left"></div>
+        <div class="header-right">
+          <span class="welcome-text">{{ getGreeting() }}，{{ userInfo.name }}</span>
+          <el-dropdown @command="handleCommand">
+            <el-avatar :size="32" class="user-avatar">
+              <el-icon><User /></el-icon>
+            </el-avatar>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人信息</el-dropdown-item>
+                <el-dropdown-item command="password">修改密码</el-dropdown-item>
+                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </el-header>
+
+      <el-main class="main">
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </el-main>
+    </el-container>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { House, User, UserFilled, ArrowDown } from '@element-plus/icons-vue'
+import { useRoute, useRouter } from 'vue-router'
+import { User } from '@element-plus/icons-vue'
+import { usePermission } from './hooks/usePermission'
 
+const route = useRoute()
 const router = useRouter()
-const isAuthenticated = ref(false)
+const { userInfo, userMenus } = usePermission()
 
-onMounted(() => {
-  isAuthenticated.value = localStorage.getItem('isAuthenticated') === 'true'
-})
+// 问候语
+const getGreeting = () => {
+  const hour = new Date().getHours()
+  if (hour < 6) return '夜深了'
+  if (hour < 9) return '早上好'
+  if (hour < 12) return '上午好'
+  if (hour < 14) return '中午好'
+  if (hour < 17) return '下午好'
+  if (hour < 19) return '傍晚好'
+  return '晚上好'
+}
 
+// 处理下拉菜单命令
 const handleCommand = (command: string) => {
-  if (command === 'logout') {
-    localStorage.removeItem('isAuthenticated')
-    isAuthenticated.value = false
-    ElMessage.success('已退出登录')
-    router.push('/login')
+  switch (command) {
+    case 'profile':
+      router.push('/profile')
+      break
+    case 'password':
+      // TODO: 实现修改密码功能
+      break
+    case 'logout':
+      // TODO: 实现登出功能
+      router.push('/login')
+      break
   }
 }
 </script>
 
-<style>
-.layout-container {
-  min-height: 100vh;
+<style scoped>
+.app-container {
+  height: 100vh;
 }
 
-.el-header {
-  padding: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.aside {
+  background-color: #304156;
+  color: #fff;
 }
 
-.el-main {
-  padding: 20px;
-  background-color: #f5f7fa;
-}
-
-.el-footer {
-  padding: 20px;
-  text-align: center;
-  background-color: #fff;
-  border-top: 1px solid #e4e7ed;
-}
-
-.flex-grow {
-  flex-grow: 1;
-}
-
-.el-dropdown-link {
-  cursor: pointer;
+.logo {
+  height: 60px;
   display: flex;
   align-items: center;
+  padding: 0 16px;
+  background-color: #2b3648;
+}
+
+.logo-img {
+  width: 32px;
+  height: 32px;
+  margin-right: 8px;
+}
+
+.logo-text {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.el-menu-vertical {
+  border-right: none;
+  background-color: #304156;
+}
+
+.el-menu-vertical :deep(.el-menu-item) {
+  color: #bfcbd9;
+}
+
+.el-menu-vertical :deep(.el-menu-item.is-active) {
+  color: #409eff;
+  background-color: #263445;
+}
+
+.el-menu-vertical :deep(.el-menu-item:hover) {
+  color: #fff;
+  background-color: #263445;
+}
+
+.header {
+  background-color: #fff;
+  border-bottom: 1px solid #e6e6e6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 0 20px;
 }
 
-.el-dropdown-link .el-icon {
-  margin-right: 4px;
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.welcome-text {
+  font-size: 14px;
+  color: #606266;
+}
+
+.user-avatar {
+  cursor: pointer;
+  background-color: #409eff;
+  color: #fff;
+}
+
+.main {
+  background-color: #f0f2f5;
+  padding: 20px;
 }
 
 .fade-enter-active,
